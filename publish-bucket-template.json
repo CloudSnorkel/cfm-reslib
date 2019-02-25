@@ -1,0 +1,82 @@
+{
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "BucketName": "cfm-reslib"
+      }
+    },
+    "User": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+      }
+    },
+    "Permission": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Sub": "${Bucket.Arn}/*"
+                }
+              ],
+              "Principal": "*"
+            },
+            {
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Sub": "${Bucket.Arn}/*"
+                }
+              ],
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "User",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Key": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "UserName": {
+          "Ref": "User"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "AccessKey": {
+      "Value": {
+        "Ref": "Key"
+      }
+    },
+    "SecretKey": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Key",
+          "SecretAccessKey"
+        ]
+      }
+    }
+  }
+}

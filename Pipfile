@@ -1,0 +1,10 @@
+[requires]
+python_version = '3.6'
+
+[scripts]
+test = "py.test tests"
+
+[packages]
+boto3 = '*'
+troposphere = '*'
+pytest = "*"
