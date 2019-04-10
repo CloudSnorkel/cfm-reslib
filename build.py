@@ -132,12 +132,12 @@ def add_state_machine_role(template: troposphere.Template,
     return role
 
 
-def add_lambda(template: troposphere.Template, zip_name: str) -> troposphere.awslambda.Function:
+def add_lambda(template: troposphere.Template, bucket: str, zip_name: str) -> troposphere.awslambda.Function:
     return troposphere.awslambda.Function(
         "CustomResourceHandler", template,
         Description="Handle custom resources for cfm-reslib",
         Runtime="python3.6",
-        Code=troposphere.awslambda.Code(S3Bucket="cf-extras-beta", S3Key=zip_name),
+        Code=troposphere.awslambda.Code(S3Bucket=bucket, S3Key=zip_name),
         Handler="reslib.handler",
         Role=add_lambda_role(template).get_att("Arn"),
         Timeout=900,
@@ -245,7 +245,7 @@ def _upload_template(bucket: str, tag: str):
     print("Done")
 
     print("Generating template...")
-    function = add_lambda(template, zip_name)
+    function = add_lambda(template, bucket, zip_name)
     add_state_machine(template, function)
     function.Environment = troposphere.awslambda.Environment(
         Variables={
