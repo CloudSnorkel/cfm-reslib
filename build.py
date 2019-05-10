@@ -138,7 +138,7 @@ def add_lambda(template: troposphere.Template, bucket: str, zip_name: str) -> tr
         Description="Handle custom resources for cfm-reslib",
         Runtime="python3.6",
         Code=troposphere.awslambda.Code(S3Bucket=bucket, S3Key=zip_name),
-        Handler="reslib.handler",
+        Handler="cfmreslib.reslib.handler",
         Role=add_lambda_role(template).get_att("Arn"),
         Timeout=900,
     )
@@ -200,7 +200,7 @@ def gen_zip() -> bytes:
     new_zip_file = io.BytesIO()
     new_zip = zipfile.ZipFile(new_zip_file, "w")
 
-    for root, dirs, files in os.walk("src"):
+    for root, dirs, files in os.walk("cfmreslib"):
         if "__pycache__" in root:
             continue
 
@@ -209,7 +209,7 @@ def gen_zip() -> bytes:
                 continue
 
             path = os.path.join(root, f)
-            zip_path = os.path.relpath(path, "src")
+            zip_path = os.path.relpath(path, ".")
             zi = zipfile.ZipInfo(zip_path)
             zi.external_attr = 0o644 << 16
             new_zip.writestr(zi, open(path).read(), zipfile.ZIP_DEFLATED)
@@ -225,8 +225,8 @@ def gen_zip() -> bytes:
 
 
 def _get_iam_actions() -> typing.List[str]:
-    import src.reslib
-    for res in src.reslib.ALL_RESOURCES:
+    import cfmreslib.reslib
+    for res in cfmreslib.resources.ALL_RESOURCES:
         yield from res().get_iam_actions()
 
 

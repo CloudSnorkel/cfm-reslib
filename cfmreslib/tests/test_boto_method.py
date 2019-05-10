@@ -1,6 +1,6 @@
 import unittest
 
-from src.reslib import BotoMethod
+from cfmreslib.boto import BotoMethod
 
 
 class TestBotoMethod(unittest.TestCase):

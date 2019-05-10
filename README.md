@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/CloudSnorkel/cfm-reslib.svg?branch=master)](https://travis-ci.org/CloudSnorkel/cfm-reslib)
+[![Build Status](https://travis-ci.org/CloudSnorkel/cfm-reslib.svg?branch=master)](https://travis-ci.org/CloudSnorkel/cfm-reslib) [![Documentation Status](https://readthedocs.org/projects/cfm-reslib/badge/?version=latest)](https://cfm-reslib.readthedocs.io/en/latest/?badge=latest)
+
 
 # cfm-reslib
 

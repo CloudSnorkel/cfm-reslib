@@ -2,9 +2,10 @@
 python_version = '3.6'
 
 [scripts]
-test = "py.test src/tests"
+test = "py.test cfmreslib/tests"
 
 [packages]
 boto3 = '*'
 troposphere = '*'
 pytest = "*"
+sphinx = "*"
