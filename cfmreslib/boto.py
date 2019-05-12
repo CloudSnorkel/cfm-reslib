@@ -242,7 +242,6 @@ def _shape_args_to_doc(doc: docs.DocWriter, replacement_attributes, shape, resou
     doc.add_header("Properties", "*")
 
     for member_name, member_shape in shape.members.items():
-        # doc.add_paragraph(f"**{member_name}**")
         doc.add_anchor(f"member_{shape.name}_{member_name}")
         doc.add_header(member_name, "~")
         doc.add_unnamed_literal(member_shape.documentation, "  ")
@@ -281,7 +280,8 @@ def _shape_args_to_doc(doc: docs.DocWriter, replacement_attributes, shape, resou
 
 def shape_args_to_json(shape, resource_type):
     if resource_type:
-        prefix = f'{{\n  "Type" : "{resource_type}",\n  "Properties" : {{\n'
+        prefix = f'{{\n  "Type" : "{resource_type}",\n  "Properties" : {{\n' \
+            '    "ServiceToken" : {"Fn::ImportValue": "cfm-reslib"},\n'
         indent = "    "
         suffix = '\n  }\n}'
     else:
@@ -296,7 +296,7 @@ def shape_args_to_json(shape, resource_type):
 
 def shape_args_to_yaml(shape, resource_type):
     if resource_type:
-        result = f'Type: {resource_type},\nProperties :\n'
+        result = f'Type: {resource_type},\nProperties :\n  ServiceToken : !ImportValue cfm-reslib\n'
         indent = "  "
     else:
         result = ""
