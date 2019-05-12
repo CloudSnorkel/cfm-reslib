@@ -296,7 +296,7 @@ def shape_args_to_json(shape, resource_type):
 
 def shape_args_to_yaml(shape, resource_type):
     if resource_type:
-        result = f'Type: {resource_type},\nProperties :\n  ServiceToken : !ImportValue cfm-reslib\n'
+        result = f'Type: {resource_type}\nProperties :\n  ServiceToken : !ImportValue cfm-reslib\n'
         indent = "  "
     else:
         result = ""
