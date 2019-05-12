@@ -1,7 +1,7 @@
 language: python
 python: "3.6"
 cache: pip
-script: echo Nothing to build
+script: pipenv run test
 install:
   - pip install pipenv
   - pipenv install --deploy
