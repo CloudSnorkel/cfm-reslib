@@ -9,3 +9,4 @@ boto3 = '*'
 troposphere = '*'
 pytest = "*"
 sphinx = "*"
+sphinx-rtd-theme = "*"
