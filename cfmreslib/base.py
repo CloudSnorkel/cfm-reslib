@@ -11,7 +11,7 @@ from cfmreslib import docs
 SUCCESS = "SUCCESS"
 FAILED = "FAILED"
 UNABLE_TO_CREATE = "XXXX_UNABLE_TO_CREATE_XXXX"
-AWS_SESSION = boto3.Session()
+AWS_SESSION = boto3.Session(region_name="us-east-1")
 
 
 def send_cf_response(event, context, response_status, response_data, physical_resource_id, reason=None):

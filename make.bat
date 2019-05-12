@@ -4,9 +4,6 @@ pushd %~dp0
 
 REM Command file for Sphinx documentation
 
-python gendoc.py
-if errorlevel 1 goto end
-
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )

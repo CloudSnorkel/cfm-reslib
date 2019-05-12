@@ -12,7 +12,7 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../cfmreslib'))
+sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
@@ -56,3 +56,48 @@ html_theme = 'alabaster'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+
+# -- Hooks for generating docs-------------------------------------------------
+
+INDEX = """Available Custom Resources
+==========================
+
+.. toctree::
+   :maxdepth: 5
+   :caption: Contents:
+   :glob:
+   :includehidden:
+
+   res_*
+"""
+
+
+def build_inited_handler(app):
+    import os.path
+    from glob import glob
+    import subprocess
+
+    # ugly workaround for https://github.com/rtfd/readthedocs.org/issues/3181
+    if os.getenv("READTHEDOCS"):
+        subprocess.check_call(["pipenv", "install", "--system", "--deploy"])
+
+    import cfmreslib.docs
+    import cfmreslib.resources
+
+    base = os.path.join("docs", "resources")
+    os.makedirs(base, exist_ok=True)
+
+    for rst in glob(os.path.join(base, "*.rst")):
+        os.unlink(rst)
+
+    with open(os.path.join(base, "index.rst"), "w") as index:
+        index.write(INDEX)
+
+    for res in cfmreslib.resources.ALL_RESOURCES:
+        with cfmreslib.docs.DocWriter(base, f"res_{res.NAME}") as doc:
+            res.write_docs(doc)
+
+
+def setup(app):
+    app.connect('builder-inited', build_inited_handler)
