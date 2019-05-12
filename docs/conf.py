@@ -85,7 +85,7 @@ def build_inited_handler(app):
     import cfmreslib.docs
     import cfmreslib.resources
 
-    base = os.path.join("docs", "resources")
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
     os.makedirs(base, exist_ok=True)
 
     for rst in glob(os.path.join(base, "*.rst")):
