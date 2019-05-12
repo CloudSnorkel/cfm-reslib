@@ -2,7 +2,7 @@
 python_version = '3.6'
 
 [scripts]
-test = "py.test tests"
+test = "py.test src/tests"
 
 [packages]
 boto3 = '*'
