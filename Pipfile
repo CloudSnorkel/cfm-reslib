@@ -2,7 +2,7 @@
 python_version = '3.6'
 
 [scripts]
-test = "py.test cfmreslib/tests"
+test = "py.test tests"
 
 [packages]
 boto3 = '*'
