@@ -60,7 +60,9 @@ html_static_path = ['_static']
 
 # -- Hooks for generating docs-------------------------------------------------
 
-INDEX = """Available Custom Resources
+INDEX = """.. _resources:
+
+Available Custom Resources
 ==========================
 
 .. toctree::
