@@ -12,7 +12,7 @@ CloudFormation Resource Library: a collection of useful custom resources that ar
 * Automatically Route 53 validated [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/) certificate
 (`Custom::Route53Certificate`)
 
-For a complete list see See the [documentation](https://cfm-reslib.cloudsnorkel.com/en/latest/resources/).
+For a complete list see the [documentation](https://cfm-reslib.cloudsnorkel.com/en/latest/resources/).
 
 Open issues to ask for more resources or pull requests with implementation.
 
