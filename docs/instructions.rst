@@ -13,7 +13,7 @@ Install
 
 Installation is a simple one-liner. Make sure you have `AWS CLI <https://aws.amazon.com/cli/>`_ installed and configured.
 
-.. code-block::
+::
 
     aws cloudformation create-stack --stack-name cfm-reslib --template-url https://s3.amazonaws.com/cfm-reslib/cfm-reslib-latest.template --capabilities CAPABILITY_IAM
 
@@ -24,7 +24,7 @@ Update
 
 If you've already installed this library before, you need to run a different command to update to the latest version.
 
-.. code-block::
+::
 
     aws cloudformation update-stack --stack-name cfm-reslib --template-url https://s3.amazonaws.com/cfm-reslib/cfm-reslib-latest.template --capabilities CAPABILITY_IAM
 
