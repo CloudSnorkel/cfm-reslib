@@ -76,6 +76,8 @@ Available Custom Resources
 
 
 def build_inited_handler(app):
+    app.add_javascript("js/github.js")
+
     import os.path
     from glob import glob
     import subprocess
