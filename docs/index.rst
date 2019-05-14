@@ -9,10 +9,3 @@ CloudFormation Resource Library: a collection of useful custom resources that ar
 
    instructions
    resources/index
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
