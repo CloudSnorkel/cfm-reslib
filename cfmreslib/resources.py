@@ -9,6 +9,7 @@ from cfmreslib.boto import BotoResourceHandler
 
 class ElasticTranscoderPipeline(BotoResourceHandler):
     NAME = "ElasticTranscoderPipeline"
+    DESCRIPTION = "The ``Custom::ElasticTranscoderPipeline`` resource creates an Elastic Transcoder pipeline."
     SERVICE = "elastictranscoder"
     CREATE_METHOD = {
         "name": "create_pipeline",
@@ -43,6 +44,7 @@ class ElasticTranscoderPipeline(BotoResourceHandler):
 
 class KafkaCluster(BotoResourceHandler):
     NAME = "KafkaCluster"
+    DESCRIPTION = "The ``Custom::KafkaCluster`` resource creates a Kafka Cluster (MSK)."
     SERVICE = "kafka"
     CREATE_METHOD = {
         "name": "create_cluster",
@@ -72,10 +74,27 @@ class Route53Certificate(CustomResourceHandler):
     # TODO BUGBUG updating this resource will cause creation of new resource and then deletion of old one
     #             deleting the old resource will also delete route 53 records which might be shared with new resource
     NAME = "Route53Certificate"
+    DESCRIPTION = "The ``Custom::Route53Certificate`` resource requests an AWS Certificate Manager (ACM) certificate " \
+                  "that you can use to enable secure connections. For example, you can deploy an ACM certificate to " \
+                  "an Elastic Load Balancer to enable HTTPS support. For more information, see RequestCertificate in " \
+                  "the AWS Certificate Manager API Reference.\n\nUnlike ``AWS::CertificateManager::Certificate``, " \
+                  "this resource automatically validates the certificate for you. This only works if you request a " \
+                  "certificate for a domain that's hosted on Route53."
+    REPLACEMENT_REQUIRED_ATTRIBUTES = {"DomainName", "SubjectAlternativeNames"}
 
     def __init__(self):
+        super().__init__()
         self._acm_client = AWS_SESSION.client("acm")
         self._route53_client = AWS_SESSION.client("route53")
+
+    @property
+    def input_shape(self):
+        # TODO make a copy of the shape somehow
+        shape = self._acm_client.meta.service_model.operation_model("RequestCertificate").input_shape
+        for m in set(shape.members.keys()):
+            if m not in ["DomainName", "SubjectAlternativeNames"]:
+                del shape.members[m]
+        return shape
 
     def create(self, args: Dict[str, object]) -> None:
         # TODO validate input. define botocore shape for auto doc?

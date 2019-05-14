@@ -7,6 +7,7 @@ import boto3
 from botocore.vendored import requests
 
 from cfmreslib import docs
+from cfmreslib.docs import shape_args_to_doc
 
 SUCCESS = "SUCCESS"
 FAILED = "FAILED"
@@ -61,11 +62,16 @@ def _clean_properties(props):
 class CustomResourceHandler(object):
     NAME = "<not set>"
     DESCRIPTION = "<not set>"
+    REPLACEMENT_REQUIRED_ATTRIBUTES = set()
 
     def __init__(self):
         self.event = None
         self.context = None
         self.physical_id = None
+
+    @property
+    def input_shape(self):
+        raise NotImplemented()
 
     def handle(self, event, context):
         self.event = event
@@ -245,3 +251,5 @@ class CustomResourceHandler(object):
     def write_docs(cls, doc: docs.DocWriter):
         doc.add_header(f"Custom::{cls.NAME}", "=")
         doc.add_paragraph(cls.DESCRIPTION)
+        instance = cls()
+        shape_args_to_doc(doc, f"Custom::{cls.NAME}", instance.input_shape, instance.REPLACEMENT_REQUIRED_ATTRIBUTES)

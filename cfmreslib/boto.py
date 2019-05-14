@@ -1,9 +1,8 @@
 import collections
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from botocore.utils import CachedProperty
 
-from cfmreslib import docs
 from cfmreslib.base import AWS_SESSION, CustomResourceHandler
 
 
@@ -84,7 +83,6 @@ class BotoResourceHandler(CustomResourceHandler):
     DELETE_METHOD = {}
     NOT_FOUND_EXCEPTION = ""
 
-    REPLACEMENT_REQUIRED_ATTRIBUTES = set()
     UPDATE_ATTRIBUTE_METHOD_MAP: Dict[str, BotoMethod] = {}
     EXTRA_PERMISSIONS = []
 
@@ -102,6 +100,10 @@ class BotoResourceHandler(CustomResourceHandler):
                 self.UPDATE_ATTRIBUTE_METHOD_MAP[attr] = update_method
 
         self._data = None
+
+    @property
+    def input_shape(self):
+        return self._create_method.input_shape
 
     @CachedProperty
     def _create_method(self):
@@ -217,115 +219,3 @@ class BotoResourceHandler(CustomResourceHandler):
             yield method.iam_op
 
         yield from self.EXTRA_PERMISSIONS
-
-    @classmethod
-    def write_docs(cls, doc: docs.DocWriter):
-        super().write_docs(doc)
-        instance = cls()
-        shape_args_to_doc(doc, f"Custom::{cls.NAME}", instance._create_method, instance.REPLACEMENT_REQUIRED_ATTRIBUTES)
-
-
-def shape_args_to_doc(doc: docs.DocWriter, resource_type: str, method: BotoMethod, replacement_attributes: Set[str]):
-    _shape_args_to_doc(doc, replacement_attributes, method.input_shape, resource_type, set())
-
-
-def _shape_args_to_doc(doc: docs.DocWriter, replacement_attributes, shape, resource_type, history: Set[str]):
-    assert shape.type_name == "structure"
-
-    doc.add_header("Syntax", "*")
-
-    doc.add_header("JSON", "~")
-    doc.add_code("json", shape_args_to_json(shape, resource_type))
-    doc.add_header("YAML", "~")
-    doc.add_code("yaml", shape_args_to_yaml(shape, resource_type))
-
-    doc.add_header("Properties", "*")
-
-    for member_name, member_shape in shape.members.items():
-        doc.add_anchor(f"member_{shape.name}_{member_name}")
-        doc.add_header(member_name, "~")
-        doc.add_unnamed_literal(member_shape.documentation, "  ")
-
-        required = "Yes" if shape.required_members else "No"
-        doc.add_paragraph(f"""*Required*: {required}""", "  ")
-
-        type_name = member_shape.type_name
-        if type_name == "structure":
-            if member_shape.name in history:
-                type_name = doc.get_anchor(f"type_{member_shape.name}")
-            else:
-                with doc.sub_writer(f"type_{member_shape.name}") as sub_doc:
-                    type_name = sub_doc.add_anchor(f"type_{member_shape.name}")
-                    sub_doc.add_header(member_shape.name, "=")
-                    _shape_args_to_doc(sub_doc, [], member_shape, None, history)
-                history.add(member_shape.name)
-        if type_name == "list":
-            if member_shape.member.type_name == "structure":
-                if member_shape.member.name in history:
-                    type_name = doc.get_anchor(f"type_{member_shape.member.name}")
-                else:
-                    with doc.sub_writer(f"type_{member_shape.member.name}") as sub_doc:
-                        type_name = sub_doc.add_anchor(f"type_{member_shape.member.name}")
-                        sub_doc.add_header(member_shape.member.name, "=")
-                        _shape_args_to_doc(sub_doc, [], member_shape.member, None, history)
-                    history.add(member_shape.member.name)
-            else:
-                type_name = member_shape.member.type_name
-            type_name = "List of " + type_name
-        doc.add_paragraph(f"""*Type*: {type_name}""", "  ")
-
-        update_replace = "Replacement" if member_name in replacement_attributes else "No interruption"
-        doc.add_paragraph(f"""*Update requires*: {update_replace}""", "  ")
-
-
-def shape_args_to_json(shape, resource_type):
-    if resource_type:
-        prefix = f'{{\n  "Type" : "{resource_type}",\n  "Properties" : {{\n' \
-            '    "ServiceToken" : {"Fn::ImportValue": "cfm-reslib"},\n'
-        indent = "    "
-        suffix = '\n  }\n}'
-    else:
-        prefix = '{\n'
-        indent = "  "
-        suffix = '\n}'
-
-    members = ",\n".join(f'{indent}"{n}" : {t}' for n, t in _shape_properties(shape))
-
-    return prefix + members + suffix
-
-
-def shape_args_to_yaml(shape, resource_type):
-    if resource_type:
-        result = f'Type: {resource_type}\nProperties :\n  ServiceToken : !ImportValue cfm-reslib\n'
-        indent = "  "
-    else:
-        result = ""
-        indent = ""
-
-    # TODO something not based on the string result of _shape_properties?
-    for n, t in _shape_properties(shape):
-        result += f"{indent}{n} :"
-        if t.startswith("["):
-            result += f"\n{indent}  - {t.strip('[] .,')}\n"
-        elif t.startswith(":ref:"):
-            result += f"\n{indent}  {t}\n"
-        else:
-            result += f" {t}\n"
-
-    return result
-
-
-def _shape_properties(shape):
-    assert shape.type_name == "structure"
-
-    for member_name, member_shape in shape.members.items():
-        linked_name = f":ref:`member_{shape.name}_{member_name}`"
-        if member_shape.type_name == "structure":
-            yield linked_name, f":ref:`type_{member_shape.name}`"
-        elif member_shape.type_name == "list":
-            if member_shape.member.type_name == "structure":
-                yield linked_name, f"[ :ref:`type_{member_shape.member.name}`, ... ]"
-            else:
-                yield linked_name, f"[ {member_shape.member.type_name}, ... ]"
-        else:
-            yield linked_name, member_shape.type_name
