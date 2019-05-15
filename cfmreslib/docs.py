@@ -48,7 +48,10 @@ class DocWriter(object):
         self.add_paragraph(f"|{lid}|", indent)
 
     def add_code(self, language, code):
-        # self.doc += f".. code-block:: {language}\n\n"
+        self.doc += f".. code-block:: {language}\n\n"
+        self.add_paragraph(code, "    ")
+
+    def add_parsed_code(self, language, code):
         self.doc += f".. parsed-literal::\n\n"
         self.add_paragraph(code, "    ")
 
@@ -85,9 +88,9 @@ def _shape_args_to_doc(doc: DocWriter, replacement_attributes, shape, resource_t
     doc.add_header("Syntax", "*")
 
     doc.add_header("JSON", "~")
-    doc.add_code("json", shape_args_to_json(shape, resource_type))
+    doc.add_parsed_code("json", shape_args_to_json(shape, resource_type))
     doc.add_header("YAML", "~")
-    doc.add_code("yaml", shape_args_to_yaml(shape, resource_type))
+    doc.add_parsed_code("yaml", shape_args_to_yaml(shape, resource_type))
 
     doc.add_header("Properties", "*")
 

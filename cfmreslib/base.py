@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import traceback
 from typing import Optional, Dict, List
 
@@ -62,6 +63,7 @@ def _clean_properties(props):
 class CustomResourceHandler(object):
     NAME = "<not set>"
     DESCRIPTION = "<not set>"
+    EXAMPLES = []
     REPLACEMENT_REQUIRED_ATTRIBUTES = set()
 
     def __init__(self):
@@ -249,7 +251,25 @@ class CustomResourceHandler(object):
 
     @classmethod
     def write_docs(cls, doc: docs.DocWriter):
+        import yaml  # don't import in lambda
+
+        # https://github.com/yaml/pyyaml/issues/98
+        def quoted_presenter(dumper, data):
+            style = '"' if re.match("^[0-9]+$", data) else ''
+            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style=style)
+
+        yaml.add_representer(str, quoted_presenter)
+
         doc.add_header(f"Custom::{cls.NAME}", "=")
         doc.add_paragraph(cls.DESCRIPTION)
         instance = cls()
         shape_args_to_doc(doc, f"Custom::{cls.NAME}", instance.input_shape, instance.REPLACEMENT_REQUIRED_ATTRIBUTES)
+        if cls.EXAMPLES:
+            doc.add_header("Examples", "*")
+            for e in cls.EXAMPLES:
+                doc.add_header(e["title"], "~")
+                doc.add_paragraph(e["description"])
+                doc.add_header("JSON", "-")
+                doc.add_code("json", json.dumps(e["template"], indent="  "))
+                doc.add_header("YAML", "-")
+                doc.add_code("yaml", yaml.dump(e["template"]))

@@ -2,7 +2,8 @@ import collections
 import time
 from typing import Dict, List, Optional
 
-from cfmreslib import docs
+from botocore.model import DenormalizedStructureBuilder
+
 from cfmreslib.base import AWS_SESSION, CustomResourceHandler
 from cfmreslib.boto import BotoResourceHandler
 
@@ -222,9 +223,94 @@ class Route53Certificate(CustomResourceHandler):
             "route53:ListHostedZones",
         ]
 
-    @classmethod
-    def write_docs(cls, doc: docs.DocWriter):
-        super().write_docs(doc)
+
+class FindAMI(CustomResourceHandler):
+    NAME = "FindAMI"
+    DESCRIPTION = "The ``Custom::FindAMI`` resource finds an AMI by owner, name and architecture. The result can then" \
+                  "be used with `Ref <https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic" \
+                  "-function-reference-ref.html>`_ "
+    EXAMPLES = [
+        {
+            "title": "Create EC2 Instance With Latest Ubuntu",
+            "description": "The following example searches for the latest version of Ubuntu 16.04 AMI and creates a new"
+                           "EC2 instance with this image.",
+            "template": {
+                "UbuntuAMI": {
+                    "Type": "Custom::FindAMI",
+                    "Properties": {
+                        "ServiceToken": {"Fn::ImportValue": "cfm-reslib"},
+                        "Owner": "099720109477",
+                        "Name": "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04*",
+                        "Architecture": "x86_64",
+                    }
+                },
+                "UbuntuInstance": {
+                    "Type": "AWS::EC2::Instance",
+                    "Properties": {
+                        "InstanceType": "t2.micro",
+                        "ImageId": {"Ref": "UbuntuAMI"},
+                    }
+                }
+            },
+        }
+    ]
+    REPLACEMENT_REQUIRED_ATTRIBUTES = {"Owner", "Name", "Architecture"}
+
+    def __init__(self):
+        super().__init__()
+        self._ec2_client = AWS_SESSION.client("ec2")
+
+    @property
+    def input_shape(self):
+        return DenormalizedStructureBuilder().with_members({
+            "Owner": {
+                "type": "string",
+                "documentation": "Image owner (e.g. \"679593333241\" for CentOS)",
+            },
+            "Name": {
+                "type": "string",
+                "documentation": "Image name (e.g. \"CentOS Linux 7 x86_64 HVM EBS *\")",
+            },
+            "Architecture": {
+                "type": "string",
+                "documentation": "Image architecture (e.g. \"x86_64\")",
+            },
+        }).build_model()
+
+    def create(self, args: Dict[str, object]) -> None:
+        response = self._ec2_client.describe_images(
+            Owners=[args['Owner']],
+            Filters=[
+                {'Name': 'name', 'Values': [args['Name']]},
+                {'Name': 'architecture', 'Values': [args['Architecture']]},
+                {'Name': 'root-device-type', 'Values': ['ebs']},
+            ],
+        )
+
+        ami_list = sorted(response['Images'], key=lambda x: x['CreationDate'], reverse=True)
+
+        if not ami_list:
+            raise RuntimeError("No images found")
+
+        self.physical_id = ami_list[0]['ImageId']
+        self._success(None)
+
+    def can_update(self, old_args: Dict[str, object], new_args: Dict[str, object], diff: List[str]) -> bool:
+        return False
+
+    def delete(self) -> None:
+        self._success(None)
+
+    def exists(self) -> bool:
+        return True
+
+    def ready(self) -> bool:
+        return True
+
+    def get_iam_actions(self) -> List[str]:
+        return [
+            "ec2:DescribeImages",
+        ]
 
 
-ALL_RESOURCES = [ElasticTranscoderPipeline, KafkaCluster, Route53Certificate]
+ALL_RESOURCES = [ElasticTranscoderPipeline, KafkaCluster, Route53Certificate, FindAMI]
