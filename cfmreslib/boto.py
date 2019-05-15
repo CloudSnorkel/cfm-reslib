@@ -34,25 +34,40 @@ class BotoMethod(object):
     @CachedProperty
     def iam_op(self):
         op = self._client.meta.method_to_api_mapping[self.method_name]
-        return f"{self.service}:{op}"
+        return f"{self._client.meta.service_model.signing_name}:{op}"
 
     def _coerce_args(self, kwargs, path=[]):
         for k, v in kwargs.items():
-            if self._get_arg_type(path, k) == "integer":
-                try:
-                    yield k, int(v)
-                except ValueError:
-                    yield k, v  # user will get an error saying an integer is expected when executing the method
-            elif isinstance(v, dict):
-                yield k, dict(self._coerce_args(v, path + [k]))
-            else:
-                yield k, v
+            yield k, self._coerce_arg(k, v, path, self._get_arg_type(path, k))
 
-    def _get_arg_type(self, path, name):
+    def _coerce_arg(self, k, v, path, wanted_type):
+        if wanted_type == "integer":
+            try:
+                return int(v)
+            except ValueError:
+                return v  # user will get an error saying an integer is expected when executing the method
+        if wanted_type == "boolean":
+            try:
+                return bool(v)
+            except ValueError:
+                return v  # user will get an error saying a boolean is expected when executing the method
+        elif isinstance(v, dict):
+            return dict(self._coerce_args(v, path + [k]))
+        elif isinstance(v, list):
+            return [self._coerce_arg(k, vi, path, self._get_arg_type(path, f"{k}[]")) for vi in v]
+        else:
+            return v
+
+    def _get_arg_type(self, path: List[str], name: str) -> str:
         try:
             members = self.method_input
             for p in path:
-                members = members[p].members
+                if members[p].type_name == "list":
+                    members = members[p].member.members
+                else:
+                    members = members[p].members
+            if name.endswith("[]"):
+                return members[name.strip("[]")].member.type_name
             return members[name].type_name
         except KeyError:
             print("Unable to find input arg type for", self, path, name)

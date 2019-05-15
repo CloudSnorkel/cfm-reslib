@@ -71,6 +71,143 @@ class KafkaCluster(BotoResourceHandler):
     NOT_FOUND_EXCEPTION = "NotFoundException"
 
 
+class LexResource(BotoResourceHandler):
+    def create(self, args: Dict[str, object]) -> None:
+        if "name" not in args:
+            raise RuntimeError("name is required")
+        name = args["name"]
+        if self._lex_exists(name):
+            # don't set self.physical_id so when delete is called, it won't delete a resource that we didn't create
+            raise RuntimeError(f"{name} already exists")
+        super().create(args)
+
+    def exists(self) -> bool:
+        return self._lex_exists(self.physical_id)
+
+
+class LexBot(LexResource):
+    NAME = "LexBot"
+    DESCRIPTION = "The ``Custom::LexBot`` resource creates a Lex Bot for building conversational interfaces into any " \
+                  "application using voice and text. "
+    EXAMPLES = [{
+        "title": "Dummy Bot",
+        "description": "This example creates a dummy intent and bot.",
+        "template": {
+            "Bot": {
+                "Type": "Custom::LexBot",
+                "Properties": {
+                    "ServiceToken": {"Fn::ImportValue": "cfm-reslib"},
+                    "name": "myfirstbot",
+                    "description": "hello",
+                    "intents": [{"intentName": {"Ref": "Intent"}, "intentVersion": "$LATEST"}],
+                    "clarificationPrompt": {
+                        "messages": [
+                            {
+                                "contentType": "PlainText",
+                                "content": "sorry, I didn't get that",
+                                "groupNumber": 1
+                            }
+                        ],
+                        "maxAttempts": 2
+                    },
+                    "abortStatement": {
+                        "messages": [
+                            {
+                                "contentType": "PlainText",
+                                "content": "bye",
+                                "groupNumber": 1
+                            }
+                        ]
+                    },
+                    "idleSessionTTLInSeconds": 60,
+                    "voiceId": "Ivy",
+                    "checksum": "",
+                    "childDirected": False,
+                    "locale": "en-US",
+                    "processBehavior": "BUILD",
+                    "createVersion": True
+                }
+            },
+            "Intent": {
+                "Type": "Custom::LexIntent",
+                "Properties": {
+                    "ServiceToken": {"Fn::ImportValue": "cfm-reslib"},
+                    "name": "myfirstintent",
+                    "createVersion": True
+                }
+            }
+        }
+    }]
+    SERVICE = "lex-models"
+    CREATE_METHOD = {
+        "name": "put_bot",
+        "physical_id_query": "name",
+    }
+    UPDATE_METHODS = [
+        {
+            "name": "put_bot",
+            "physical_id_query": "name",
+        }
+    ]
+    EXISTS_METHOD = {
+        "name": "get_bot",
+        "physical_id_argument": "name",
+        "attributes_query": "",
+    }
+    EXIST_READY_QUERY = {
+        "query": "status",
+        "expected_value": "READY",
+        "failed_values": ["FAILED", "NOT_BUILT"],
+    }
+    DELETE_METHOD = {
+        "name": "delete_bot",
+        "physical_id_argument": "name",
+    }
+    EXTRA_PERMISSIONS = []
+    NOT_FOUND_EXCEPTION = "NotFoundException"
+
+    def _lex_exists(self, name) -> bool:
+        try:
+            self._exists_method(name=name, versionOrAlias="$LATEST")
+            return True
+        except self._CLIENT.exceptions.NotFoundException:
+            return False
+
+
+class LexIntent(LexResource):
+    NAME = "LexIntent"
+    DESCRIPTION = "The ``Custom::LexIntent`` resource creates an intent for a Lex Bot."
+    SERVICE = "lex-models"
+    CREATE_METHOD = {
+        "name": "put_intent",
+        "physical_id_query": "name",
+    }
+    UPDATE_METHODS = [
+        {
+            "name": "put_intent",
+            "physical_id_query": "name",
+        }
+    ]
+    EXISTS_METHOD = {
+        "name": "get_intent",
+        "physical_id_argument": "name",
+        "attributes_query": "",
+    }
+    DELETE_METHOD = {
+        "name": "delete_intent",
+        "physical_id_argument": "name",
+    }
+    EXTRA_PERMISSIONS = []
+    NOT_FOUND_EXCEPTION = "NotFoundException"
+
+    def _lex_exists(self, name) -> bool:
+        try:
+            self._exists_method(name=name, version="$LATEST")
+            return True
+        except self._CLIENT.exceptions.NotFoundException:
+            return False
+
+
 class Route53Certificate(CustomResourceHandler):
     # TODO BUGBUG updating this resource will cause creation of new resource and then deletion of old one
     #             deleting the old resource will also delete route 53 records which might be shared with new resource
@@ -313,4 +450,4 @@ class FindAMI(CustomResourceHandler):
         ]
 
 
-ALL_RESOURCES = [ElasticTranscoderPipeline, KafkaCluster, Route53Certificate, FindAMI]
+ALL_RESOURCES = [ElasticTranscoderPipeline, KafkaCluster, Route53Certificate, LexBot, LexIntent, FindAMI]

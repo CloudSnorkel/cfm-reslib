@@ -43,6 +43,8 @@ class DocWriter(object):
         self.literals[name] = text
 
     def add_unnamed_literal(self, text, indent=""):
+        if not text:
+            return
         lid = _next_desc_id()
         self.add_literal(lid, text)
         self.add_paragraph(f"|{lid}|", indent)
@@ -79,23 +81,23 @@ class DocWriter(object):
 
 
 def shape_args_to_doc(doc: DocWriter, resource_type: str, input_shape, replacement_attributes: Set[str]):
-    _shape_args_to_doc(doc, replacement_attributes, input_shape, resource_type, set())
+    _shape_args_to_doc(doc, replacement_attributes, input_shape, resource_type, input_shape.name, set())
 
 
-def _shape_args_to_doc(doc: DocWriter, replacement_attributes, shape, resource_type, history: Set[str]):
+def _shape_args_to_doc(doc: DocWriter, replacement_attributes, shape, resource_type, scope, history: Set[str]):
     assert shape.type_name == "structure"
 
     doc.add_header("Syntax", "*")
 
     doc.add_header("JSON", "~")
-    doc.add_parsed_code("json", shape_args_to_json(shape, resource_type))
+    doc.add_parsed_code("json", shape_args_to_json(scope, shape, resource_type))
     doc.add_header("YAML", "~")
-    doc.add_parsed_code("yaml", shape_args_to_yaml(shape, resource_type))
+    doc.add_parsed_code("yaml", shape_args_to_yaml(scope, shape, resource_type))
 
     doc.add_header("Properties", "*")
 
     for member_name, member_shape in shape.members.items():
-        doc.add_anchor(f"member_{shape.name}_{member_name}")
+        doc.add_anchor(f"member_{scope}_{shape.name}_{member_name}")
         doc.add_header(member_name, "~")
         doc.add_unnamed_literal(member_shape.documentation, "  ")
 
@@ -105,22 +107,22 @@ def _shape_args_to_doc(doc: DocWriter, replacement_attributes, shape, resource_t
         type_name = member_shape.type_name
         if type_name == "structure":
             if member_shape.name in history:
-                type_name = doc.get_anchor(f"type_{member_shape.name}")
+                type_name = doc.get_anchor(f"type_{scope}_{member_shape.name}")
             else:
-                with doc.sub_writer(f"type_{member_shape.name}") as sub_doc:
-                    type_name = sub_doc.add_anchor(f"type_{member_shape.name}")
+                with doc.sub_writer(f"type_{scope}_{member_shape.name}") as sub_doc:
+                    type_name = sub_doc.add_anchor(f"type_{scope}_{member_shape.name}")
                     sub_doc.add_header(member_shape.name, "=")
-                    _shape_args_to_doc(sub_doc, [], member_shape, None, history)
+                    _shape_args_to_doc(sub_doc, [], member_shape, None, scope, history)
                 history.add(member_shape.name)
         if type_name == "list":
             if member_shape.member.type_name == "structure":
                 if member_shape.member.name in history:
-                    type_name = doc.get_anchor(f"type_{member_shape.member.name}")
+                    type_name = doc.get_anchor(f"type_{scope}_{member_shape.member.name}")
                 else:
-                    with doc.sub_writer(f"type_{member_shape.member.name}") as sub_doc:
-                        type_name = sub_doc.add_anchor(f"type_{member_shape.member.name}")
+                    with doc.sub_writer(f"type_{scope}_{member_shape.member.name}") as sub_doc:
+                        type_name = sub_doc.add_anchor(f"type_{scope}_{member_shape.member.name}")
                         sub_doc.add_header(member_shape.member.name, "=")
-                        _shape_args_to_doc(sub_doc, [], member_shape.member, None, history)
+                        _shape_args_to_doc(sub_doc, [], member_shape.member, None, scope, history)
                     history.add(member_shape.member.name)
             else:
                 type_name = member_shape.member.type_name
@@ -131,7 +133,7 @@ def _shape_args_to_doc(doc: DocWriter, replacement_attributes, shape, resource_t
         doc.add_paragraph(f"""*Update requires*: {update_replace}""", "  ")
 
 
-def shape_args_to_json(shape, resource_type):
+def shape_args_to_json(scope, shape, resource_type):
     if resource_type:
         prefix = f'{{\n  "Type" : "{resource_type}",\n  "Properties" : {{\n' \
             '    "ServiceToken" : {"Fn::ImportValue": "cfm-reslib"},\n'
@@ -142,12 +144,12 @@ def shape_args_to_json(shape, resource_type):
         indent = "  "
         suffix = '\n}'
 
-    members = ",\n".join(f'{indent}"{n}" : {t}' for n, t in _shape_properties(shape))
+    members = ",\n".join(f'{indent}"{n}" : {t}' for n, t in _shape_properties(scope, shape))
 
     return prefix + members + suffix
 
 
-def shape_args_to_yaml(shape, resource_type):
+def shape_args_to_yaml(scope, shape, resource_type):
     if resource_type:
         result = f'Type: {resource_type}\nProperties :\n  ServiceToken : !ImportValue cfm-reslib\n'
         indent = "  "
@@ -156,7 +158,7 @@ def shape_args_to_yaml(shape, resource_type):
         indent = ""
 
     # TODO something not based on the string result of _shape_properties?
-    for n, t in _shape_properties(shape):
+    for n, t in _shape_properties(scope, shape):
         result += f"{indent}{n} :"
         if t.startswith("["):
             result += f"\n{indent}  - {t.strip('[] .,')}\n"
@@ -168,16 +170,16 @@ def shape_args_to_yaml(shape, resource_type):
     return result
 
 
-def _shape_properties(shape):
+def _shape_properties(scope, shape):
     assert shape.type_name == "structure"
 
     for member_name, member_shape in shape.members.items():
-        linked_name = f":ref:`member_{shape.name}_{member_name}`"
+        linked_name = f":ref:`member_{scope}_{shape.name}_{member_name}`"
         if member_shape.type_name == "structure":
-            yield linked_name, f":ref:`type_{member_shape.name}`"
+            yield linked_name, f":ref:`type_{scope}_{member_shape.name}`"
         elif member_shape.type_name == "list":
             if member_shape.member.type_name == "structure":
-                yield linked_name, f"[ :ref:`type_{member_shape.member.name}`, ... ]"
+                yield linked_name, f"[ :ref:`type_{scope}_{member_shape.member.name}`, ... ]"
             else:
                 yield linked_name, f"[ {member_shape.member.type_name}, ... ]"
         else:

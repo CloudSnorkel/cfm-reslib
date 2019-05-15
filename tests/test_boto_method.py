@@ -44,6 +44,19 @@ class TestBotoMethod(unittest.TestCase):
         assert method._get_arg_type(["BrokerNodeGroupInfo", "DoesNotExistForSure"], "Something") == ""
         assert method._get_arg_type(["BrokerNodeGroupInfo", "DoesNotExistForSure", "Hello"], "Something") == ""
 
+        assert method._get_arg_type([], "NumberOfBrokerNodes") == "integer"
+
+    def test_arg_type_list(self):
+        method = BotoMethod("lex-models", {"name": "put_bot"})
+
+        assert method._get_arg_type(["clarificationPrompt"], "messages") == "list"
+        assert method._get_arg_type(["clarificationPrompt"], "messages[]") == "structure"
+        assert method._get_arg_type(["clarificationPrompt", "messages"], "groupNumber") == "integer"
+
+        method = BotoMethod("kafka", {"name": "create_cluster"})
+
+        assert method._get_arg_type(["BrokerNodeGroupInfo"], "ClientSubnets[]") == "string"
+
     def test_coerce_args(self):
         method = BotoMethod("kafka", {"name": "create_cluster"})
 
@@ -79,3 +92,29 @@ class TestBotoMethod(unittest.TestCase):
             "NumberOfBrokerNodes": "not a number",
         }
         assert dict(method._coerce_args(args)) == args
+
+    def test_coerce_args_list(self):
+        method = BotoMethod("lex-models", {"name": "put_bot"})
+
+        args = {
+            "clarificationPrompt": {
+                "messages": [
+                    {
+                        "contentType": "string",
+                        "groupNumber": "123",
+                    }
+                ]
+            }
+        }
+        expected = {
+            "clarificationPrompt": {
+                "messages": [
+                    {
+                        "contentType": "string",
+                        "groupNumber": 123,
+                    }
+                ]
+            }
+        }
+
+        assert dict(method._coerce_args(args)) == expected
