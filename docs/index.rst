@@ -9,3 +9,4 @@ CloudFormation Resource Library: a collection of useful custom resources that ar
 
    instructions
    resources/index
+   dev

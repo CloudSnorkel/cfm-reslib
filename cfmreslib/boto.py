@@ -74,16 +74,33 @@ class BotoMethod(object):
 
 
 class BotoResourceHandler(CustomResourceHandler):
-    NAME = None
-    SERVICE = None
+    NAME = None  #: Custom resource name to be used in CloudFormation with ``Custom::`` prefix.
+    SERVICE = None  #: boto3 service name that will be used to create the client (e.g. s3, acm, ec2).
+    #: Descriptor for method used to create resource. Requires "name" with the name of the method, and
+    #: "physical_id_query" used to query for the physical id of the newly created resource from the method return value.
     CREATE_METHOD = {}
+    #: Optional list of descriptor for methods used to update an existing resource. Each item requires "name" with the
+    #: name of the method, and "physical_id_argument" with the name of the method argument that needs to have the
+    #: physical id of the updated resource.
     UPDATE_METHODS = []
+    #: Descriptor for method used to check if resource exists. Requires "name" with the name of the method, and
+    #: "physical_id_argument" with the name of the method argument that needs to have the physical id of the checked
+    #: resource. This method will raise the exception set in ``NOT_FOUND_EXCEPTION`` when the resource does not exist.
     EXISTS_METHOD = {}
+    #: Optional descriptor of query to check against the result of ``EXISTS_METHOD``. When set we will wait until the
+    #: resource is ready before finishing with create and update operations. Requires "query" with the query to run over
+    #: the exists method result, "expected_value" with the expected value (e.g. READY), and "failed_values" with values
+    #: that denote failure and should stop the operation.
     EXIST_READY_QUERY = {}
+    #: Descriptor for method used to delete an existing resource. Requires "name" with the name of the method, and
+    #: "physical_id_argument" with the name of the method argument that needs to have the physical id of the resource.
     DELETE_METHOD = {}
+    #: Name of exception thrown by the exists method if the resource doesn't exist.
     NOT_FOUND_EXCEPTION = ""
 
     UPDATE_ATTRIBUTE_METHOD_MAP: Dict[str, BotoMethod] = {}
+    #: A list of extra permissions required by any operations for this resource. Most permissions will be deduced by
+    #: method names, but sometimes extra IAM permissions are required.
     EXTRA_PERMISSIONS = []
 
     def __init__(self):

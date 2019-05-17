@@ -61,10 +61,15 @@ def _clean_properties(props):
 
 
 class CustomResourceHandler(object):
-    NAME = "<not set>"
-    DESCRIPTION = "<not set>"
-    EXAMPLES = []
-    REPLACEMENT_REQUIRED_ATTRIBUTES = set()
+    """
+    Abstract base class for all custom resources. Implement this class for new resources. Check the documentation for
+    each method. Not all methods are always required.
+    """
+    NAME = "<not set>"  #: Custom resource name to be used in CloudFormation with ``Custom::`` prefix.
+    DESCRIPTION = "<not set>"  #: Resource description for automatically generated documentation.
+    #: Optional resource examples to be used in documentation. Each example needs "title", "description" and "template".
+    EXAMPLES: List[Dict[str, str]] = []
+    REPLACEMENT_REQUIRED_ATTRIBUTES = set() #: set of properties that require a replacement on update value changes.
 
     def __init__(self):
         self.event = None
@@ -173,6 +178,7 @@ class CustomResourceHandler(object):
         Checks if the resource specified in self.physical_id exists.
 
         * Must always be implemented
+
         :return: `True` if the resource exists, `False` if not
         """
         raise NotImplemented()
@@ -183,6 +189,7 @@ class CustomResourceHandler(object):
 
         * Must always be implemented
         * Can just return `True` if a resource existing means it's ready
+
         :return: `True` if the resource exists, `False` if not
         """
         raise NotImplemented()
@@ -192,6 +199,7 @@ class CustomResourceHandler(object):
         Retrieves the current data that should be returned for this resource.
 
         * Only required if :func:`_wait_ready()` is used
+
         :return: resource data, can be `None`
         """
         raise NotImplemented()
@@ -213,10 +221,11 @@ class CustomResourceHandler(object):
         Checks if a resource can safely be updated or whether a new one has to be created.
 
         * Must always be implemented, but can just return `False` if needed.
+
         :param old_args: existing arguments as passed from CloudFormation for the current resource
         :param new_args: requested arguments as passed from CloudFormation
         :param diff: a list of argument names that have changed value
-        :return `True` if the resource can be updated or `False` if it needs to be recreated
+        :return: `True` if the resource can be updated or `False` if it needs to be recreated
         """
         raise NotImplemented()
 
@@ -226,6 +235,7 @@ class CustomResourceHandler(object):
 
         * Must call :func:`_success`, :func:`_fail` or :func:`_wait_ready`
         * Only required if :func:`can_update()` ever returns `True`.
+
         :param old_args: existing arguments as passed from CloudFormation for the current resource
         :param new_args: requested arguments as passed from CloudFormation
         :param diff: a list of argument names that have changed value
