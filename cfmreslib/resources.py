@@ -45,7 +45,7 @@ class ElasticTranscoderPipeline(BotoResourceHandler):
 
 class KafkaCluster(BotoResourceHandler):
     NAME = "KafkaCluster"
-    DESCRIPTION = "The ``Custom::KafkaCluster`` resource creates a Kafka Cluster (MSK)."
+    DESCRIPTION = "The ``Custom::KafkaCluster`` resource creates a Kafka Cluster (MSK). Now offificially available in CloudFormation with `AWS::MSK::Cluster <https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html>`_."
     SERVICE = "kafka"
     CREATE_METHOD = {
         "name": "create_cluster",
