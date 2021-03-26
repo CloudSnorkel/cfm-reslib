@@ -84,7 +84,8 @@ def build_inited_handler(app):
 
     # ugly workaround for https://github.com/rtfd/readthedocs.org/issues/3181
     if os.getenv("READTHEDOCS"):
-        subprocess.check_call(["pipenv", "install", "--system", "--deploy"])
+        subprocess.check_call(["poetry", "config", "virtualenvs.create", "false"])
+        subprocess.check_call(["poetry", "install"])
 
     import cfmreslib.docs
     import cfmreslib.resources

@@ -27,7 +27,7 @@ Preparing Environment
 
 .. code-block:: bash
 
-    pipenv install
+    poetry install
 
 Run Tests
 =========
@@ -36,7 +36,7 @@ Unit tests can be executed using py.test or simply with:
 
 .. code-block:: bash
 
-    pipenv run test
+    poetry run py.test tests
 
 Building
 ========
@@ -48,7 +48,7 @@ script will create both a ZIP file and a template and will upload it to a given 
 .. code-block:: bash
 
     BUCKET=my-bucket-name
-    python build.py $BUCKET
+    poetry run python build.py $BUCKET
 
 And just like when deploying the released versions of cfm-reslib, you can deploy this with ``aws`` CLI tool.
 

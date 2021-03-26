@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "cfm-reslib"
+version = "0.0.0"
+description = "CloudFormation Resource Library: a collection of useful custom resources that are missing from CloudFormation"
+license = "MIT"
+authors = ["CloudSnorkel <amir@cloudsnorkel.com>"]
+readme = "README.md"
+homepage = "https://https://cfm-reslib.cloudsnorkel.com/"
+repository = "https://github.com/CloudSnorkel/cfm-reslib"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+boto3 = "^1.17.38"
+troposphere = "^2.7.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.2"
+Sphinx = "^3.5.3"
+sphinx-rtd-theme = "^0.5.1"
