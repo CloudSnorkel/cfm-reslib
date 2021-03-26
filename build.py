@@ -9,6 +9,7 @@ import typing
 import zipfile
 
 import boto3
+import requests
 import troposphere.awslambda
 import troposphere.cloudformation
 import troposphere.config
@@ -20,7 +21,6 @@ import troposphere.logs
 import troposphere.s3
 import troposphere.sns
 import troposphere.stepfunctions
-from botocore.vendored import requests
 
 
 def add_lambda_role(template: troposphere.Template) -> troposphere.iam.Role:

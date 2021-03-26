@@ -16,6 +16,7 @@ build-backend = "poetry.core.masonry.api"
 python = "^3.6"
 boto3 = "^1.17.38"
 troposphere = "^2.7.0"
+requests = "^2.25.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.2"
